@@ -38,7 +38,7 @@ jobs:
       - name: Enviar versão Web
         uses: actions/upload-pages-artifact@v3
         with:
-          path: exports/web
+          path: exports/web/Web
 
   deploy:
     environment:
