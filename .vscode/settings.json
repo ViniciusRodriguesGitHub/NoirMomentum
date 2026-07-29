@@ -1,0 +1,20 @@
+{
+  "godotTools.editorPath.godot4": "${env:LOCALAPPDATA}\\Programs\\Godot\\4.7.1\\Godot_v4.7.1-stable_win64.exe",
+  "godotTools.lsp.headless": true,
+  "godotTools.lsp.autoReconnect.enabled": true,
+  "files.exclude": {
+    "**/.godot": true
+  },
+  "search.exclude": {
+    "**/.godot": true
+  },
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "[gdscript]": {
+    "editor.defaultFormatter": "geequlim.godot-tools",
+    "editor.insertSpaces": false,
+    "editor.tabSize": 4,
+    "editor.detectIndentation": false,
+    "editor.formatOnSave": true
+  }
+}
