@@ -5,7 +5,8 @@
     }
   ],
   "settings": {
-    "window.title": "Noir Momentum — ${activeEditorShort}"
+    "window.title": "Noir Momentum — ${activeEditorShort}",
+    "godotTools.editorPath.godot3": "c:\\Users\\vinic\\AppData\\Local\\Programs\\Godot\\4.7.1\\Godot_v4.7.1-stable_win64.exe"
   }
 }
 

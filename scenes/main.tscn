@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/noir_world.gd" id="2_world"]
 [ext_resource type="Script" path="res://scripts/world_fx.gd" id="3_fx"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="4_player"]
 [ext_resource type="Script" path="res://scripts/hud.gd" id="5_hud"]
+[ext_resource type="Script" path="res://scripts/game_audio.gd" id="6_audio"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -24,3 +25,5 @@ position = Vector2(260, 600)
 layer = 20
 script = ExtResource("5_hud")
 
+[node name="GameAudio" type="Node" parent="."]
+script = ExtResource("6_audio")

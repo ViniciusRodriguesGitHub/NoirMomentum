@@ -1,6 +1,9 @@
 extends CanvasLayer
 
 var state_label: Label
+var light_label: Label
+var timer_label: Label
+var finish_label: Label
 
 
 func _ready() -> void:
@@ -54,8 +57,10 @@ func _ready() -> void:
 
 	var controls := Label.new()
 	controls.text = (
-		"A/D ou ←/→  •  toque duplo: correr  •  ↓ durante a corrida: deslizar"
-		+ "  •  direção contrária: derrapar  •  Espaço: pular  •  R: reiniciar"
+		"A/D ou ←/→  •  toque duplo: correr  •  ↓ correndo: deslizar"
+		+ "  •  ↓ parado: carregar  •  ↓ + direção: agachar"
+		+ "  •  toque em Espaço: salto curto"
+		+ "  •  segure Espaço: salto normal  •  R: reiniciar"
 	)
 	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	controls.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -84,10 +89,97 @@ func _ready() -> void:
 	)
 	root.add_child(prototype)
 
+	light_label = Label.new()
+	light_label.anchor_left = 1.0
+	light_label.anchor_top = 0.0
+	light_label.anchor_right = 1.0
+	light_label.anchor_bottom = 0.0
+	light_label.offset_left = -250.0
+	light_label.offset_top = 55.0
+	light_label.offset_right = -25.0
+	light_label.offset_bottom = 88.0
+	light_label.text = "LUZES  0 / 0"
+	light_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	light_label.add_theme_font_size_override("font_size", 18)
+	light_label.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.68, 0.32, 1.0)
+	)
+	root.add_child(light_label)
+
+	timer_label = Label.new()
+	timer_label.anchor_left = 0.5
+	timer_label.anchor_top = 0.0
+	timer_label.anchor_right = 0.5
+	timer_label.anchor_bottom = 0.0
+	timer_label.offset_left = -240.0
+	timer_label.offset_top = 25.0
+	timer_label.offset_right = 240.0
+	timer_label.offset_bottom = 55.0
+	timer_label.text = "TEMPO  00:00.000   •   MELHOR  --:--.---"
+	timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	timer_label.add_theme_font_size_override("font_size", 16)
+	timer_label.add_theme_color_override(
+		"font_color",
+		Color(0.84, 0.8, 0.76, 0.95)
+	)
+	root.add_child(timer_label)
+
+	finish_label = Label.new()
+	finish_label.anchor_left = 0.5
+	finish_label.anchor_top = 0.42
+	finish_label.anchor_right = 0.5
+	finish_label.anchor_bottom = 0.42
+	finish_label.offset_left = -330.0
+	finish_label.offset_top = -45.0
+	finish_label.offset_right = 330.0
+	finish_label.offset_bottom = 45.0
+	finish_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	finish_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	finish_label.add_theme_font_size_override("font_size", 25)
+	finish_label.add_theme_color_override(
+		"font_color",
+		Color(1.0, 0.68, 0.32, 1.0)
+	)
+	root.add_child(finish_label)
+
 
 func set_state(label: String) -> void:
 	if state_label:
 		state_label.text = "ESTADO • " + label
+
+
+func set_light_count(collected: int, total: int) -> void:
+	if light_label:
+		light_label.text = "LUZES  %d / %d" % [collected, total]
+
+
+func set_timer(current_time: float, best_time: float) -> void:
+	if not timer_label:
+		return
+
+	var best_text := "--:--.---"
+	if is_finite(best_time):
+		best_text = _format_time(best_time)
+	timer_label.text = (
+		"TEMPO  "
+		+ _format_time(current_time)
+		+ "   •   MELHOR  "
+		+ best_text
+	)
+
+
+func show_finish_message(message: String) -> void:
+	if finish_label:
+		finish_label.text = message
+
+
+func _format_time(value: float) -> String:
+	var total_milliseconds := int(value * 1000.0)
+	var minutes := total_milliseconds / 60000
+	var seconds := (total_milliseconds / 1000) % 60
+	var milliseconds := total_milliseconds % 1000
+	return "%02d:%02d.%03d" % [minutes, seconds, milliseconds]
 
 
 func _make_panel_style() -> StyleBoxFlat:

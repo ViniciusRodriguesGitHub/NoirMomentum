@@ -4,13 +4,24 @@ Protótipo 2D feito em Godot 4.7.1 com visual procedural. Não utiliza imagens
 externas: o personagem, a cidade, a fumaça, as luzes e as partículas são
 desenhados pelo próprio jogo.
 
+As luzes espalhadas pela fase podem ser coletadas e aparecem no contador do
+HUD. Algumas ficam em plataformas acessíveis apenas com salto carregado,
+segundo salto ou salto na parede. A ambientação e os efeitos sonoros também
+são sintetizados proceduralmente pelo jogo.
+
+A fase termina no portão à direita somente após coletar todas as luzes. O HUD
+mostra o tempo da tentativa e o melhor tempo registrado durante a sessão.
+
 ## Controles
 
 - `A` / `D` ou setas: caminhar.
 - Dois toques na mesma direção: correr.
 - `S` ou seta para baixo durante a corrida: deslizar deitado.
+- `S` ou seta para baixo parado: carregar o salto alto; solte para pular.
+- Segure `S` ou seta para baixo e use uma direção: andar agachado.
 - Direção contrária durante a corrida: derrapar e mudar de direção.
-- `Espaço`: pular.
+- Toque em `Espaço`: salto curto; segure para alcançar a altura normal.
+- `Espaço` junto à parede: quicar para o lado oposto.
 - `R`: reiniciar a fase.
 - Controle: analógico ou direcional; botão inferior para pular.
 
@@ -23,6 +34,16 @@ godot --editor --path "$env:USERPROFILE\GodotProjects\NoirMomentum"
 ```
 
 Dentro da Godot, pressione `F6` ou `F5` para executar.
+
+## Jogar no navegador
+
+Após a publicação do workflow `Publicar jogo no GitHub Pages`, o jogo fica
+disponível em:
+
+https://viniciusrodriguesgithub.github.io/NoirMomentum/
+
+O workflow exporta automaticamente a versão Web com Godot 4.7.1 sempre que
+uma alteração chega à branch `main`.
 
 ## VS Code
 
