@@ -45,6 +45,16 @@ https://viniciusrodriguesgithub.github.io/NoirMomentum/
 O workflow exporta automaticamente a versão Web com Godot 4.7.1 sempre que
 uma alteração chega à branch `main`.
 
+### Publicar no itch.io
+
+O workflow manual `Publicar jogo no itch.io` exporta a mesma versão HTML5 e
+envia o diretório com `butler`. Antes de executá-lo, crie uma página do tipo
+HTML Game no itch.io e configure no repositório:
+
+- secret `BUTLER_API_KEY`;
+- variável `ITCH_USERNAME`;
+- variável `ITCH_GAME` com o identificador da página.
+
 ## VS Code
 
 O projeto inclui configuração pronta para a extensão oficial da comunidade
