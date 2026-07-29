@@ -1,0 +1,52 @@
+name: Publicar jogo no itch.io
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v5
+
+      - name: Validar configuração itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_USERNAME: ${{ vars.ITCH_USERNAME }}
+          ITCH_GAME: ${{ vars.ITCH_GAME }}
+        run: |
+          test -n "$BUTLER_API_KEY"
+          test -n "$ITCH_USERNAME"
+          test -n "$ITCH_GAME"
+
+      - name: Exportar projeto para Web
+        uses: firebelley/godot-export@v7.0.0
+        with:
+          godot_executable_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_linux.x86_64.zip
+          godot_export_templates_download_url: https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_export_templates.tpz
+          relative_project_path: ./
+          presets_to_export: Web
+          use_preset_export_path: true
+          cache: true
+
+      - name: Instalar butler
+        run: |
+          curl -L -o butler.zip \
+            https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler
+          chmod +x butler/butler
+
+      - name: Publicar canal HTML5
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_USERNAME: ${{ vars.ITCH_USERNAME }}
+          ITCH_GAME: ${{ vars.ITCH_GAME }}
+        run: |
+          ./butler/butler push \
+            exports/web \
+            "$ITCH_USERNAME/$ITCH_GAME:html5"
+

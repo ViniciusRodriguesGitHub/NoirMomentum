@@ -1,5 +1,9 @@
 extends Node2D
 
+signal player_hit_hazard
+signal light_collected
+signal finish_reached
+
 const LEVEL_WIDTH := 3200.0
 const GROUND_TOP := 600.0
 
@@ -12,6 +16,37 @@ var platforms: Array[Rect2] = [
 	Rect2(2520, 445, 250, 24),
 ]
 
+var wall_jump_obstacles: Array[Rect2] = [
+	Rect2(2800, 200, 144, 24),
+	Rect2(2920, 220, 24, 300),
+	Rect2(3120, 120, 24, 480),
+]
+
+var special_platforms: Array[Rect2] = [
+	Rect2(350, 410, 150, 20),
+	Rect2(1280, 330, 130, 20),
+	Rect2(2660, 300, 130, 20),
+]
+
+var crawl_obstacles: Array[Rect2] = [
+	Rect2(2020, 526, 170, 24),
+]
+
+var spike_zones: Array[Rect2] = [
+	Rect2(1615, 570, 65, 30),
+	Rect2(2415, 570, 85, 30),
+]
+
+var light_points := PackedVector2Array([
+	Vector2(425, 372),
+	Vector2(930, 565),
+	Vector2(1345, 292),
+	Vector2(2110, 574),
+	Vector2(2725, 262),
+	Vector2(2870, 162),
+])
+
+var collected_lights: Dictionary = {}
 var lamp_positions := PackedFloat32Array([430.0, 1120.0, 1900.0, 2760.0])
 var buildings: Array[Rect2] = []
 
@@ -23,6 +58,32 @@ func _ready() -> void:
 	for index in range(platforms.size()):
 		_add_solid(platforms[index], "Platform_%02d" % index)
 
+	for index in range(wall_jump_obstacles.size()):
+		_add_solid(
+			wall_jump_obstacles[index],
+			"WallJump_%02d" % index
+		)
+
+	for index in range(special_platforms.size()):
+		_add_solid(
+			special_platforms[index],
+			"SpecialPlatform_%02d" % index
+		)
+
+	for index in range(crawl_obstacles.size()):
+		_add_solid(crawl_obstacles[index], "CrawlTunnel_%02d" % index)
+
+	for index in range(spike_zones.size()):
+		_add_spike_zone(spike_zones[index], index)
+
+	for index in range(light_points.size()):
+		_add_light_pickup(light_points[index], index)
+
+	_add_finish_zone()
+	queue_redraw()
+
+
+func _process(_delta: float) -> void:
 	queue_redraw()
 
 
@@ -53,12 +114,92 @@ func _add_solid(rect: Rect2, body_name: String) -> void:
 	add_child(body)
 
 
+func _add_spike_zone(rect: Rect2, index: int) -> void:
+	var area := Area2D.new()
+	area.name = "Spikes_%02d" % index
+	area.monitoring = true
+	area.body_entered.connect(_on_spike_body_entered)
+
+	var shape := RectangleShape2D.new()
+	shape.size = rect.size
+
+	var collision := CollisionShape2D.new()
+	collision.position = rect.get_center()
+	collision.shape = shape
+
+	area.add_child(collision)
+	add_child(area)
+
+
+func _on_spike_body_entered(body: Node2D) -> void:
+	if body.is_in_group("player"):
+		player_hit_hazard.emit()
+
+
+func _add_light_pickup(position: Vector2, index: int) -> void:
+	var area := Area2D.new()
+	area.name = "Light_%02d" % index
+	area.position = position
+	area.monitoring = true
+	area.body_entered.connect(_on_light_body_entered.bind(index, area))
+
+	var shape := CircleShape2D.new()
+	shape.radius = 17.0
+
+	var collision := CollisionShape2D.new()
+	collision.shape = shape
+	area.add_child(collision)
+	add_child(area)
+
+
+func _on_light_body_entered(body: Node2D, index: int, area: Area2D) -> void:
+	if not body.is_in_group("player") or collected_lights.has(index):
+		return
+
+	collected_lights[index] = true
+	area.set_deferred("monitoring", false)
+	area.queue_free()
+	light_collected.emit()
+	queue_redraw()
+
+
+func get_total_lights() -> int:
+	return light_points.size()
+
+
+func _add_finish_zone() -> void:
+	var area := Area2D.new()
+	area.name = "FinishZone"
+	area.position = Vector2(3175, 300)
+	area.monitoring = true
+	area.body_entered.connect(_on_finish_body_entered)
+
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(50, 600)
+
+	var collision := CollisionShape2D.new()
+	collision.shape = shape
+	area.add_child(collision)
+	add_child(area)
+
+
+func _on_finish_body_entered(body: Node2D) -> void:
+	if body.is_in_group("player"):
+		finish_reached.emit()
+
+
 func _draw() -> void:
 	_draw_background()
 	_draw_skyline()
 	_draw_warm_lights()
 	_draw_platforms()
+	_draw_special_platforms()
+	_draw_wall_jump_obstacle()
+	_draw_crawl_obstacles()
 	_draw_ground()
+	_draw_spikes()
+	_draw_light_pickups()
+	_draw_finish_gate()
 	_draw_lamps()
 
 
@@ -177,6 +318,150 @@ func _draw_platforms() -> void:
 				Color(0.92, 0.53, 0.27, 0.82),
 				3.0
 			)
+
+
+func _draw_special_platforms() -> void:
+	for platform in special_platforms:
+		draw_rect(platform, Color(0.07, 0.055, 0.06, 1.0), true)
+		draw_rect(
+			Rect2(platform.position, Vector2(platform.size.x, 4.0)),
+			Color(0.92, 0.48, 0.22, 0.95),
+			true
+		)
+		for x in range(
+			int(platform.position.x) + 12,
+			int(platform.end.x) - 6,
+			24
+		):
+			draw_circle(
+				Vector2(x, platform.position.y + 10.0),
+				2.2,
+				Color(0.84, 0.42, 0.2, 0.7)
+			)
+
+
+func _draw_wall_jump_obstacle() -> void:
+	for obstacle in wall_jump_obstacles:
+		draw_rect(obstacle, Color(0.045, 0.042, 0.048, 1.0), true)
+		draw_rect(
+			Rect2(obstacle.position, Vector2(obstacle.size.x, 4.0)),
+			Color(0.44, 0.23, 0.13, 0.95),
+			true
+		)
+
+	for y in range(255, 510, 42):
+		draw_line(
+			Vector2(2944, y),
+			Vector2(2960, y + 8),
+			Color(0.84, 0.43, 0.21, 0.72),
+			3.0
+		)
+		draw_line(
+			Vector2(3104, y + 8),
+			Vector2(3120, y),
+			Color(0.84, 0.43, 0.21, 0.72),
+			3.0
+		)
+
+	draw_string(
+		ThemeDB.fallback_font,
+		Vector2(2958, 560),
+		"PAREDE",
+		HORIZONTAL_ALIGNMENT_LEFT,
+		130.0,
+		13,
+		Color(0.66, 0.42, 0.28, 0.9)
+	)
+
+
+func _draw_crawl_obstacles() -> void:
+	for obstacle in crawl_obstacles:
+		draw_rect(obstacle, Color(0.05, 0.046, 0.052, 1.0), true)
+		draw_rect(
+			Rect2(obstacle.position, Vector2(obstacle.size.x, 4.0)),
+			Color(0.5, 0.25, 0.13, 0.9),
+			true
+		)
+		draw_line(
+			Vector2(obstacle.position.x + 8.0, obstacle.end.y - 5.0),
+			Vector2(obstacle.end.x - 8.0, obstacle.end.y - 5.0),
+			Color(0.17, 0.1, 0.08, 0.9),
+			2.0
+		)
+
+
+func _draw_spikes() -> void:
+	for zone in spike_zones:
+		var spike_width := 17.0
+		var x := zone.position.x
+		while x < zone.end.x:
+			var right := minf(x + spike_width, zone.end.x)
+			var points := PackedVector2Array([
+				Vector2(x, GROUND_TOP),
+				Vector2((x + right) * 0.5, zone.position.y),
+				Vector2(right, GROUND_TOP),
+			])
+			draw_colored_polygon(
+				points,
+				Color(0.46, 0.2, 0.13, 1.0)
+			)
+			draw_polyline(
+				PackedVector2Array([points[0], points[1], points[2]]),
+				Color(0.94, 0.48, 0.24, 0.9),
+				2.0
+			)
+			x += spike_width
+
+
+func _draw_light_pickups() -> void:
+	var elapsed := Time.get_ticks_msec() / 1000.0
+	for index in range(light_points.size()):
+		if collected_lights.has(index):
+			continue
+
+		var position := light_points[index]
+		var pulse := 1.0 + sin(elapsed * 3.2 + index) * 0.12
+		for ring in range(4, 0, -1):
+			draw_circle(
+				position,
+				float(ring) * 7.0 * pulse,
+				Color(1.0, 0.55, 0.24, 0.018 * (5 - ring))
+			)
+		draw_circle(
+			position,
+			7.0 * pulse,
+			Color(1.0, 0.72, 0.34, 0.95)
+		)
+		draw_circle(
+			position + Vector2(-2.0, -2.0),
+			2.2,
+			Color(1.0, 0.94, 0.72, 1.0)
+		)
+
+
+func _draw_finish_gate() -> void:
+	var gate_x := 3160.0
+	draw_line(
+		Vector2(gate_x, 600),
+		Vector2(gate_x, 155),
+		Color(0.12, 0.08, 0.07, 1.0),
+		8.0
+	)
+	draw_line(
+		Vector2(gate_x - 34, 155),
+		Vector2(gate_x + 34, 155),
+		Color(0.94, 0.47, 0.22, 0.9),
+		5.0
+	)
+	draw_string(
+		ThemeDB.fallback_font,
+		Vector2(gate_x - 52, 140),
+		"FIM",
+		HORIZONTAL_ALIGNMENT_CENTER,
+		104.0,
+		18,
+		Color(1.0, 0.7, 0.36, 1.0)
+	)
 
 
 func _draw_ground() -> void:
